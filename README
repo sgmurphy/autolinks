@@ -1,0 +1,9 @@
+Autolinks is a PHP library for auto-hyperlinking URLs in plain text.
+
+Example:
+
+"Free CouchDB intro talk tonight at c-base, Berlin: http://jan.io/bkMW — See you there!"
+
+Would be turned in to:
+
+"Free CouchDB intro talk tonight at c-base, Berlin: <a href="http://jan.io/bkMW">http://jan.io/bkMW</a> — See you there!"
