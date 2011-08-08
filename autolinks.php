@@ -168,4 +168,19 @@ function replace_emails_callback($text, $callback, &$emails = array()) {
 	
 	return $text;
 }
+
+/**
+ * Linkify Email
+ *
+ * Turn an email into a clickable link
+ *
+ * @author Sean Murphy <sean@iamseanmurphy.com>
+ * @param string $user
+ * @param string $host
+ * @return string
+ */
+function linkify_email($user, $host) {
+	$email = $user.'@'.$host;
+	return "<a href=\"mailto:$email\" class=\"extlink\">$email</a>";
+}
 ?>
