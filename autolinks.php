@@ -5,15 +5,18 @@
  * Replace all URLs found in string with the
  * result of a callback function.
  *
+ * If the $urls argument is supplied it will be filled with all found URLs.
+ *
  * @author Sean Murphy <sean@iamseanmurphy.com>
- * @copyright Sean Murphy Dec 1, 2008
+ * @copyright Sean Murphy 2008-2011
  * @license http://www.gnu.org/copyleft/gpl.html
  *
  * @param string $text
- * @param string $callback
+ * @param mixed $callback
+ * @param array $urls
  * @return string
  */
-function replace_urls_callback($text, $callback) {
+function replace_urls_callback($text, $callback, &$urls = array()) {
 	// Start off with a regex
 	$regex = '#
 	(?:
@@ -31,8 +34,10 @@ function replace_urls_callback($text, $callback) {
 	#ix';
 	preg_match_all($regex, $text, $matches);
 	
+	$index = 0; // Gets passed to callback as a valid URL's index
+	$offset = 0; // Track position in string as it's processed
+	
 	// Then clean up what the regex left behind
-	$offset = 0;
 	foreach($matches[0] as $orig_url) {
 		$url = htmlspecialchars_decode($orig_url);
 		
@@ -80,13 +85,18 @@ function replace_urls_callback($text, $callback) {
 		// Put the url back the way we found it.
 		$url = (mb_strpos($orig_url, htmlspecialchars($url)) === FALSE) ? $url:htmlspecialchars($url);
 		
-		// Call user specified func
-		$modified_url = $callback($url);
+		// Add URL to array
+		$urls[] = $url;
+		
+		// Call user specified function
+		$modified_url = is_callable($callback) ? call_user_func($callback, $url, $index):$url;
 		
 		// Replace it!
 		$start = mb_strpos($text, $url, $offset);
 		$text = mb_substr($text, 0, $start).$modified_url.mb_substr($text, $start + mb_strlen($url), mb_strlen($text));
 		$offset = $start + mb_strlen($modified_url);
+		
+		$index++;
 	}
 	
 	return $text;
@@ -105,5 +115,57 @@ function linkify($url) {
 	$display = $url;
 	$url = (!preg_match('#^([a-z]+://|(mailto|aim|tel):)#i', $url)) ? 'http://'.$url:$url;
 	return "<a href=\"$url\" class=\"extlink\">$display</a>";
+}
+
+/**
+ * Markdown Linkify
+ *
+ * Turn a URL into a clickable link using Markdown markup.
+ *
+ * @author Sean Murphy <sean@iamseanmurphy.com>
+ * @param string $url
+ * @return string
+ */
+function markdown_linkify($url) {
+	$display = $url;
+	$url = (!preg_match('#^([a-z]+://|(mailto|aim|tel):)#i', $url)) ? 'http://'.$url:$url;
+	return "[$display]($url)";
+}
+
+/**
+ * Replace Email Addresses Callback
+ *
+ * Replace all email addresses found in string with the
+ * result of a callback function.
+ *
+ * If the $emails argument is supplied it will be filled with all found email addresses.
+ *
+ * @author Sean Murphy <sean@iamseanmurphy.com>
+ * @copyright Sean Murphy 2010-2011
+ * @license http://www.gnu.org/copyleft/gpl.html
+ *
+ * @param string $text
+ * @param mixed $callback
+ * @param array $emails
+ * @return string
+ */
+function replace_emails_callback($text, $callback, &$emails = array()) {
+	preg_match_all('#\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b#i', $text, $matches);
+	
+	$offset = 0;
+	foreach ($matches[0] as $index => $email) {
+		// Add email to array
+		$emails[] = $email;
+		
+		// Call user specified function
+		$modified_email = is_callable($callback) ? call_user_func($callback, $matches[1][$index], $matches[2][$index], $index):$email;
+		
+		// Replace it!
+		$start = mb_strpos($text, $email, $offset);
+		$text = mb_substr($text, 0, $start).$modified_email.mb_substr($text, $start + mb_strlen($email), mb_strlen($text));
+		$offset = $start + mb_strlen($modified_email);
+	}
+	
+	return $text;
 }
 ?>
